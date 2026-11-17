@@ -1,5 +1,5 @@
 // Critter Defense offline cache. Bump VERSION whenever you upload a new build.
-const VERSION = 'critter-defense-v1';
+const VERSION = 'critter-defense-v4';
 const FILES = [
   './',
   './index.html',
