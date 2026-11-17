@@ -1,0 +1,1105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Critter Defense</title>
+<meta name="theme-color" content="#160f2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Critter Defense">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{--bg:#160f2e;--panel:#271d4a;--panel2:#352862;--line:#4a3a80;--ink:#fff6fb;--muted:#c4b4e6;--pink:#ffb3d9;--gold:#ffd166;--good:#7be0a8;--bad:#ff6b8a;--ice:#8fd8ff;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(ellipse at 20% 0%,#3a2470 0%,var(--bg) 55%) fixed,var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;min-height:100vh}
+button{font:inherit;color:inherit}
+#app{max-width:1320px;margin:0 auto;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.screen{display:none}.screen.on{display:block}
+.hidden{display:none!important}
+.btn{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:10px 16px;font-weight:bold;cursor:pointer;transition:transform .08s,background .15s}
+.btn:hover:not(:disabled){background:#46357e;transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:linear-gradient(180deg,#ff8fc4,#e866a6);border-color:#ffb3d9;color:#fff}
+.btn.gold{background:linear-gradient(180deg,#ffd97a,#f0b43c);border-color:#ffe6a8;color:#3a2410}
+.btn.ice{background:linear-gradient(180deg,#9fe0ff,#55b4ea);border-color:#c9eeff;color:#0d2a40}
+.btn.small{padding:6px 10px;border-radius:10px;font-size:14px}
+.chip{background:var(--panel);border:2px solid var(--line);padding:6px 12px;border-radius:999px;font-weight:bold;white-space:nowrap}
+.muted{color:var(--muted)}
+h1,h2,h3{margin:.2em 0}
+.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.topbar h2{flex:1}
+/* home */
+.home{text-align:center;padding:40px 0}
+.logo{font-size:18px;letter-spacing:3px;color:var(--pink);text-transform:uppercase}
+.home h1{font-size:clamp(40px,8vw,76px);background:linear-gradient(180deg,#fff,#ffc4e3);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 6px 30px rgba(255,140,200,.25)}
+.critters{font-size:46px;margin:10px 0 18px;letter-spacing:8px}
+.menu{display:flex;flex-direction:column;gap:12px;max-width:340px;margin:24px auto}
+.menu .btn{font-size:20px;padding:14px}
+.stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;margin-top:20px;opacity:.7}
+/* levels */
+.tabs{display:flex;gap:6px}
+.tabs .btn.on{background:var(--pink);color:#3a1530;border-color:#fff}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.lvl{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer}
+.lvl:hover:not(.locked){border-color:var(--pink)}
+.lvl b{font-size:22px;display:block}
+.lvl .st{color:var(--gold);letter-spacing:1px}
+.lvl .mp{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvl.locked{opacity:.35;cursor:not-allowed}
+.lvl.boss{box-shadow:inset 0 0 0 2px rgba(255,107,138,.5)}
+/* cards */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card2{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.card2 .ic{font-size:38px}
+.card2.locked{opacity:.45}
+.card2.pick{cursor:pointer}
+.card2.pick:hover:not(.locked){border-color:var(--pink)}
+.card2.sel{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,209,102,.35)}
+.pips{display:flex;gap:5px}
+.pips i{width:22px;height:10px;border-radius:5px;background:#43356f}
+.pips i.on{background:var(--gold)}
+.max{color:var(--good);font-weight:bold}
+/* game */
+#game{display:flex;gap:12px;align-items:flex-start}
+#left{flex:1;min-width:0}
+#hud{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+#hud .grow{flex:1}
+#cv{width:100%;display:block;border-radius:16px;touch-action:none;border:3px solid var(--line);background:#2a2050;cursor:pointer}
+#side{width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:12px}
+.ptitle{font-weight:bold;margin-bottom:8px;color:var(--pink)}
+.shop{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tcard{background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:8px;cursor:pointer;text-align:center;position:relative}
+.tcard .ti{font-size:30px}
+.tcard .tn{font-weight:bold}
+.tcard .tc{color:var(--gold);font-weight:bold}
+.tcard .key{position:absolute;top:4px;left:7px;font-size:11px;color:var(--muted)}
+.tcard.on{border-color:var(--gold);background:#4b3a85}
+.tcard.poor{opacity:.45}
+.info{font-size:14px;line-height:1.45}
+.info .row{display:flex;justify-content:space-between}
+.bar{height:8px;background:#1a1335;border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ice);width:0}
+#hero{width:100%}
+.rel{font-size:14px}
+@media (max-width:900px){#game{flex-direction:column}#side{width:100%;display:grid;grid-template-columns:1fr 1fr}#side .panel:first-child{grid-column:1/-1}.shop{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:520px){.shop{grid-template-columns:1fr 1fr}#side{grid-template-columns:1fr}}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(10,5,25,.78);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10;overflow:auto}
+.mcard{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:22px;max-width:920px;width:100%;max-height:calc(100vh - 32px);overflow:auto}
+.mcard.narrow{max-width:460px;text-align:center}
+.bigstars{font-size:52px;color:var(--gold);letter-spacing:6px}
+.bigstars .off{color:#4a3a80}
+.mbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+#pick-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+#pick-grid .card2{padding:10px;gap:3px;font-size:13px}
+#pick-grid .card2 .ic{font-size:26px}
+#pick-grid .card2 h3{font-size:16px}
+.legsum{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.legsum span{font-size:13px}
+.unlock{background:#3b2c70;border:2px dashed var(--gold);border-radius:14px;padding:10px;margin-top:12px}
+/* phones */
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+#app{padding-top:max(14px,env(safe-area-inset-top,0px));padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}
+button,.tcard,.lvl,.card2,#cv{touch-action:manipulation}
+.overlay{padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#rotate-hint{display:none;background:var(--panel2);border:2px dashed var(--pink);border-radius:12px;padding:8px 12px;margin-bottom:8px;text-align:center;font-weight:bold}
+@media (orientation:portrait) and (max-width:700px){#rotate-hint{display:block}}
+@media (orientation:landscape) and (max-height:520px){
+  #app{padding-top:max(6px,env(safe-area-inset-top,0px));padding-bottom:6px}
+  #game{flex-direction:row;gap:8px}
+  #left{flex:0 0 auto;width:min(calc((100dvh - 84px) * 1.6),calc(100% - 230px))}
+  #hud{gap:4px;margin-bottom:4px}
+  #hud .chip{padding:3px 8px;font-size:12px;border-width:1px}
+  #hud .btn{padding:5px 9px;font-size:12px;border-radius:10px}
+  #g-relic{display:none}
+  #cv{border-width:2px;border-radius:10px}
+  #side{width:auto;flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;max-height:calc(100dvh - 12px);overflow-y:auto}
+  .panel{padding:7px;border-radius:12px}
+  .ptitle{margin-bottom:4px;font-size:13px}
+  .shop{grid-template-columns:1fr 1fr;gap:5px}
+  .tcard{padding:4px;border-radius:10px}
+  .tcard .ti{font-size:20px}
+  .tcard .tn,.tcard .tc{font-size:12px}
+  .tcard .key{display:none}
+  .info{font-size:12px}
+  #hero{padding:7px;font-size:13px}
+  .hero-note{display:none}
+  .home{padding:6px 0}
+  .home h1{font-size:44px}
+  .critters{font-size:28px;margin:2px 0 6px}
+  .menu{margin:10px auto;gap:8px}
+  .menu .btn{font-size:16px;padding:9px}
+  .mcard{padding:14px}
+  .bigstars{font-size:36px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section id="scr-home" class="screen">
+    <div class="home">
+      <div class="logo">🪐 Cosmic Critters</div>
+      <h1>Critter Defense</h1>
+      <div class="critters">🐷 🐶 🦎 ⭐</div>
+      <p class="muted">Space blobs are heading for the shophouse. Send in the critters!</p>
+      <div class="stats">
+        <div class="chip">🐷 Piggy Bank: <span id="h-bank"></span> 🪙</div>
+        <div class="chip">★ Stars: <span id="h-stars"></span></div>
+      </div>
+      <div class="menu">
+        <button class="btn primary" data-go="levels">▶ Play</button>
+        <button class="btn gold" data-go="legacy">🏛 Legacy Upgrades</button>
+        <button class="btn" data-go="relics">🔮 Relics</button>
+      </div>
+      <button class="link" id="reset">Reset all progress</button>
+    </div>
+  </section>
+
+  <section id="scr-levels" class="screen">
+    <div class="topbar">
+      <button class="btn small" data-go="home">← Back</button>
+      <h2>Choose a Level</h2>
+      <div class="tabs"><button class="btn small on" data-mode="n">Normal</button><button class="btn small" data-mode="h">Hard 🔥</button></div>
+      <div class="chip">★ <span class="v-stars"></span></div>
+    </div>
+    <p class="muted" id="mode-note"></p>
+    <div class="lgrid" id="lgrid"></div>
+  </section>
+
+  <section id="scr-legacy" class="screen">
+    <div class="topbar">
+      <button class="btn small" data-go="home">← Back</button>
+      <h2>🏛 Legacy Upgrades</h2>
+      <div class="chip">🐷 <span class="v-bank"></span> 🪙</div>
+    </div>
+    <p class="muted">Coins you earn in levels go into your Piggy Bank, which never resets. Once you buy an upgrade, it works in every level forever.</p>
+    <div class="cgrid" id="legacy-grid"></div>
+  </section>
+
+  <section id="scr-relics" class="screen">
+    <div class="topbar">
+      <button class="btn small" data-go="home">← Back</button>
+      <h2>🔮 Relics</h2>
+      <div class="chip">★ <span class="v-stars"></span></div>
+    </div>
+    <p class="muted">You unlock 1 new Relic every 50 stars. Before each level you bring exactly one.</p>
+    <div class="cgrid" id="relic-grid"></div>
+  </section>
+
+  <section id="scr-game" class="screen">
+    <div id="rotate-hint">📱 Turn your phone sideways for a bigger map</div>
+    <div id="game">
+      <div id="left">
+        <div id="hud">
+          <div class="chip" id="g-level"></div>
+          <div class="chip">❤️ <span id="g-lives"></span></div>
+          <div class="chip">🪙 <span id="g-coins"></span></div>
+          <div class="chip">🌊 <span id="g-wave"></span></div>
+          <div class="chip rel" id="g-relic"></div>
+          <div class="grow"></div>
+          <button class="btn primary" id="wavebtn"></button>
+          <button class="btn small" id="speedbtn">1x</button>
+          <button class="btn small" id="pausebtn">⏸</button>
+        </div>
+        <canvas id="cv"></canvas>
+      </div>
+      <aside id="side">
+        <div class="panel"><div class="ptitle">Build a critter</div><div class="shop" id="shop"></div></div>
+        <div class="panel info" id="info"></div>
+        <div class="panel">
+          <button class="btn ice" id="hero">❄️ Cosmic Freeze</button>
+          <div class="bar"><i id="hero-bar"></i></div>
+          <div class="muted hero-note" style="font-size:12px;margin-top:6px">Hero Power: freezes every enemy for 3s. Hotkey F.</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</div>
+
+<div id="modal" class="overlay hidden"><div class="mcard" id="mcard"></div></div>
+
+<script>
+"use strict";
+/* =========================================================
+   DATA & BALANCE (tweak numbers here)
+   ========================================================= */
+const T = 60, COLS = 16, ROWS = 10, CW = COLS * T, CH = ROWS * T;
+const NUM_LEVELS = 60, RELIC_STEP = 50, BASE_LIVES = 20, BASE_COINS = 250;
+const SAVE_KEY = 'critterDefense_v1';
+
+const LEGACY = [
+  {id:'start', icon:'🪙', name:'Strong Start', per:'+50 starting coins per level', max:5, costs:[500,1000,1800,2800,4000], fx:l=>`+${l*50} coins at start`},
+  {id:'tough', icon:'🏠', name:'Tough Base', per:'+1 extra life per level', max:3, costs:[800,2000,3500], fx:l=>`+${l} lives`},
+  {id:'piggy', icon:'🐷', name:'Piggy Power', per:'Piggy +5% damage per level', max:5, costs:[500,1000,1800,2800,4000], fx:l=>`Piggy +${l*5}% damage`},
+  {id:'pomsky',icon:'🐶', name:'Pomsky Power', per:'Pomsky +5% range per level', max:5, costs:[500,1000,1800,2800,4000], fx:l=>`Pomsky +${l*5}% range`},
+  {id:'axo',   icon:'🦎', name:'Axolotl Power', per:'Slow lasts +0.5s longer per level', max:5, costs:[500,1000,1800,2800,4000], fx:l=>`Slow +${(l*0.5).toFixed(1)}s`},
+  {id:'star',  icon:'⭐', name:'Star Power', per:'Star splash +5% damage per level', max:5, costs:[500,1000,1800,2800,4000], fx:l=>`Star +${l*5}% splash damage`},
+];
+
+const RELICS = [
+  {id:'lucky',     icon:'🪙', name:'Lucky Coin',       desc:'Start with +200 coins.'},
+  {id:'heart',     icon:'💖', name:'Extra Heart',      desc:'+2 lives for this level.'},
+  {id:'freeze',    icon:'❄️', name:'Freeze Charm',     desc:'Your Hero Power recharges 35% faster.'},
+  {id:'sunflower', icon:'🌻', name:'Golden Sunflower', desc:'Earn +20% coins in this level.'},
+  {id:'thorn',     icon:'🌵', name:'Thorn Shield',     desc:'When an enemy hits your base, every enemy on the field loses 10% HP.'},
+  {id:'boots',     icon:'👢', name:'Speed Boots',      desc:'Towers build and upgrade 20% faster.'},
+  {id:'magnet',    icon:'🧲', name:'Magnet',           desc:'Enemies move 5% slower.'},
+  {id:'second',    icon:'🔁', name:'Second Chance',    desc:'If you lose, retry once with full lives.'},
+];
+
+const TOWERS = {
+  piggy:  {name:'Piggy',   icon:'🐷', key:'1', cost:100, up:[90,170],  dmg:[15,28,50],  range:[2.3,2.5,2.8], rate:[0.75,0.65,0.5], ps:9,  desc:'Snout blaster. Quick single-target shots.'},
+  pomsky: {name:'Pomsky',  icon:'🐶', key:'2', cost:150, up:[130,230], dmg:[40,80,150], range:[3.6,4.1,4.7], rate:[1.6,1.45,1.3], ps:16, pierce:true, desc:'Long-range howl. Big hits that ignore armor.'},
+  axolotl:{name:'Axolotl', icon:'🦎', key:'3', cost:120, up:[100,170], dmg:[6,10,16],   range:[2.2,2.4,2.7], rate:[1.0,0.9,0.75], ps:8, slow:[0.35,0.45,0.55], slowDur:[1.5,2,2.5], desc:'Bubble shots slow enemies down.'},
+  star:   {name:'Star',    icon:'⭐', key:'4', cost:200, up:[160,260], dmg:[22,40,70],  range:[2.5,2.8,3.1], rate:[1.7,1.5,1.3], ps:7, splash:[0.9,1.1,1.3], desc:'Shooting stars that splash everything nearby.'},
+};
+const BUILD_TIME = 1.6, UPGRADE_TIME = 1.4, SELL_BACK = 0.7;
+
+const ENEMIES = {
+  blob:  {name:'Space Blob',   hp:40,   speed:1.1,  reward:5,   lives:1,  r:14, armor:0, cost:1,   gap:0.8},
+  mini:  {name:'Mini Blob',    hp:18,   speed:1.5,  reward:3,   lives:1,  r:9,  armor:0, cost:0.6, gap:0.45},
+  zoomer:{name:'Comet Zoomer', hp:30,   speed:2.1,  reward:6,   lives:1,  r:12, armor:0, cost:1.3, gap:0.6},
+  beetle:{name:'Rock Beetle',  hp:140,  speed:0.72, reward:12,  lives:2,  r:16, armor:3, cost:2.6, gap:1.0},
+  boss:  {name:'UFO Boss',     hp:1000, speed:0.45, reward:100, lives:10, r:26, armor:2, cost:0,   gap:2.5},
+};
+
+// Paths: tile waypoints [col,row]. First point is off-screen (spawn), last is the shophouse.
+const MAPS = [
+  {name:'Meadow Moon',   grass:['#97d9a6','#8ccf9b'], path:'#f3dcae', edge:'#d9bd88', pts:[[-1,2],[4,2],[4,7],[9,7],[9,2],[13,2],[13,8],[15,8]]},
+  {name:'Crater Rim',    grass:['#bcaaea','#b19fe0'], path:'#f4d9ea', edge:'#d6b2cb', pts:[[-1,5],[3,5],[3,1],[7,1],[7,8],[11,8],[11,3],[15,3]]},
+  {name:'Zigzag Nebula', grass:['#a2d5ea','#96cbe0'], path:'#fbe7c0', edge:'#dcc394', pts:[[2,-1],[2,4],[6,4],[6,1],[10,1],[10,6],[5,6],[5,8],[14,8],[14,3],[15,3]]},
+  {name:'Spiral Galaxy', grass:['#f5bad1','#ecafc6'], path:'#fff0d6', edge:'#e0c9a4', pts:[[-1,1],[14,1],[14,8],[1,8],[1,4],[10,4],[10,6],[6,6]]},
+  {name:'Comet Canyon',  grass:['#f2cd96','#e8c28a'], path:'#fdf0d8', edge:'#dcc6a0', pts:[[-1,8],[3,8],[3,2],[6,2],[6,7],[9,7],[9,2],[12,2],[12,7],[15,7]]},
+  {name:'Starfall Pass', grass:['#aee2d3','#a1d7c7'], path:'#f6e2c4', edge:'#d8bf98', pts:[[8,-1],[8,2],[3,2],[3,7],[12,7],[12,4],[15,4]]},
+];
+
+function levelInfo(L, hard){
+  const map = MAPS[(L-1) % MAPS.length];
+  return {
+    map,
+    hpMul: (1 + 0.08*(L-1)) * (hard ? 1.6 : 1),
+    spdMul: hard ? 1.1 : 1,
+    rewMul: 1 + 0.035*(L-1),
+    waves: Math.min(10, 5 + Math.floor((L-1)/8)) + (hard ? 1 : 0),
+    boss: L % 5 === 0,
+  };
+}
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+function defaultSave(){ return {bank:0, legacy:{start:0,tough:0,piggy:0,pomsky:0,axo:0,star:0}, stars:{}, lastRelic:'lucky'}; }
+function loadSave(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(s && s.legacy){ const d = defaultSave(); return {...d, ...s, legacy:{...d.legacy, ...s.legacy}, stars:{...s.stars}}; }
+  }catch(e){}
+  return defaultSave();
+}
+let save = loadSave();
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+const totalStars = () => Object.values(save.stars).reduce((a,b)=>a+b, 0);
+const relicUnlocked = (i, stars=totalStars()) => stars >= i*RELIC_STEP;
+const isLevelOpen = (L, mode) => mode==='n' ? (L===1 || (save.stars['n'+(L-1)]||0) > 0) : (save.stars['n'+L]||0) > 0;
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const fmt = n => Math.floor(n).toLocaleString();
+function rng32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const starStr = n => '★'.repeat(n) + '☆'.repeat(3-n);
+
+/* =========================================================
+   SCREENS
+   ========================================================= */
+let levelMode = 'n';
+function show(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === 'scr-'+name));
+  document.querySelectorAll('.v-stars').forEach(e => e.textContent = totalStars());
+  document.querySelectorAll('.v-bank').forEach(e => e.textContent = fmt(save.bank));
+  if(name === 'home'){ $('#h-bank').textContent = fmt(save.bank); $('#h-stars').textContent = totalStars() + ' / ' + NUM_LEVELS*6; }
+  if(name === 'levels') renderLevels();
+  if(name === 'legacy') renderLegacy();
+  if(name === 'relics') renderRelics();
+  if(name !== 'game') G = null;
+  window.scrollTo(0,0);
+}
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if(go){ closeModal(); show(go.dataset.go); }
+  const md = e.target.closest('[data-mode]');
+  if(md){ levelMode = md.dataset.mode; document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on', b===md)); renderLevels(); }
+});
+
+function renderLevels(){
+  $('#mode-note').textContent = levelMode === 'n'
+    ? 'Beat a level to unlock the next one. Every 5th level has a UFO boss.'
+    : 'Hard Mode: enemies have +60% HP, move 10% faster and bring an extra wave. Unlocks after you beat that level on Normal.';
+  let h = '';
+  for(let L=1; L<=NUM_LEVELS; L++){
+    const open = isLevelOpen(L, levelMode), st = save.stars[levelMode+L] || 0, info = levelInfo(L, levelMode==='h');
+    h += `<div class="lvl ${open?'':'locked'} ${info.boss?'boss':''}" data-lvl="${L}">
+      <b>${open ? L : '🔒'}</b><div class="st">${starStr(st)}</div><div class="mp">${info.boss?'🛸 ':''}${info.map.name}</div></div>`;
+  }
+  $('#lgrid').innerHTML = h;
+}
+$('#lgrid').addEventListener('click', e => {
+  const c = e.target.closest('.lvl'); if(!c || c.classList.contains('locked')) return;
+  openRelicPick(+c.dataset.lvl, levelMode === 'h');
+});
+
+function renderLegacy(){
+  $('#legacy-grid').innerHTML = LEGACY.map(u => {
+    const l = save.legacy[u.id], maxed = l >= u.max, cost = u.costs[l];
+    return `<div class="card2"><div class="ic">${u.icon}</div><h3>${u.name}</h3>
+      <div class="muted">${u.per}</div>
+      <div class="pips">${Array.from({length:u.max},(_,i)=>`<i class="${i<l?'on':''}"></i>`).join('')}</div>
+      <div>Now: <b>${l ? u.fx(l) : 'not bought yet'}</b></div>
+      ${maxed ? '<div class="max">✔ MAXED</div>' : `<button class="btn gold" data-buy="${u.id}" ${save.bank<cost?'disabled':''}>Buy Lv ${l+1} for ${fmt(cost)} 🪙</button>`}
+    </div>`;
+  }).join('');
+}
+$('#legacy-grid').addEventListener('click', e => {
+  const b = e.target.closest('[data-buy]'); if(!b) return;
+  const u = LEGACY.find(x => x.id === b.dataset.buy), l = save.legacy[u.id];
+  if(l >= u.max || save.bank < u.costs[l]) return;
+  save.bank -= u.costs[l]; save.legacy[u.id]++; persist(); show('legacy');
+});
+
+function relicCard(r, i, pickable){
+  const open = relicUnlocked(i);
+  return `<div class="card2 ${open?'':'locked'} ${pickable?'pick':''} ${pickable&&open&&save.lastRelic===r.id?'sel':''}" data-relic="${r.id}">
+    <div class="ic">${open ? r.icon : '🔒'}</div><h3>${r.name}</h3><div class="muted">${r.desc}</div>
+    ${open ? '' : `<div><b>Unlocks at ${i*RELIC_STEP} ★</b></div>`}</div>`;
+}
+function renderRelics(){ $('#relic-grid').innerHTML = RELICS.map((r,i)=>relicCard(r,i,false)).join(''); }
+
+function legacySummary(){
+  const parts = LEGACY.filter(u => save.legacy[u.id] > 0).map(u => `<span class="chip">${u.icon} ${u.fx(save.legacy[u.id])}</span>`);
+  return parts.length ? parts.join('') : '<span class="muted">No Legacy upgrades yet. Earn coins and visit the Legacy shop!</span>';
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+function openModal(html, narrow){ $('#mcard').className = 'mcard' + (narrow?' narrow':''); $('#mcard').innerHTML = html; $('#modal').classList.remove('hidden'); }
+function closeModal(){ $('#modal').classList.add('hidden'); }
+
+function openRelicPick(L, hard){
+  if(!relicUnlocked(RELICS.findIndex(r=>r.id===save.lastRelic))) save.lastRelic = 'lucky';
+  const info = levelInfo(L, hard);
+  openModal(`<h2>Level ${L}${hard?' 🔥 Hard':''}: ${info.map.name}</h2>
+    <div class="muted">${info.waves} waves${info.boss?' · 🛸 UFO boss on the last wave':''}</div>
+    <h3 style="margin-top:14px">Your Legacy (always on)</h3><div class="legsum">${legacySummary()}</div>
+    <h3>Pick 1 Relic</h3>
+    <div class="cgrid" id="pick-grid">${RELICS.map((r,i)=>relicCard(r,i,true)).join('')}</div>
+    <div class="mbtns"><button class="btn" id="pick-cancel">Cancel</button><button class="btn primary" id="pick-go">▶ Start Level</button></div>`);
+  $('#pick-grid').onclick = e => {
+    const c = e.target.closest('[data-relic]'); if(!c || c.classList.contains('locked')) return;
+    save.lastRelic = c.dataset.relic; persist();
+    document.querySelectorAll('#pick-grid .card2').forEach(x => x.classList.toggle('sel', x === c));
+  };
+  $('#pick-cancel').onclick = closeModal;
+  $('#pick-go').onclick = () => { closeModal(); startLevel(L, hard, save.lastRelic); };
+}
+
+$('#reset').onclick = () => {
+  openModal(`<h2>Reset everything?</h2><p>This wipes your Piggy Bank, Legacy upgrades and all stars. It can't be undone.</p>
+    <div class="mbtns"><button class="btn" id="r-no">Keep my progress</button><button class="btn primary" id="r-yes">Reset</button></div>`, true);
+  $('#r-no').onclick = closeModal;
+  $('#r-yes').onclick = () => { save = defaultSave(); persist(); closeModal(); show('home'); };
+};
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+cv.width = CW*DPR; cv.height = CH*DPR;
+let G = null, bg = null, uid = 0;
+
+function buildPath(map){
+  const pts = map.pts.map(([c,r]) => ({x:(c+0.5)*T, y:(r+0.5)*T}));
+  const segs = []; let len = 0;
+  for(let i=0;i<pts.length-1;i++){ const a=pts[i], b=pts[i+1], l=Math.hypot(b.x-a.x,b.y-a.y); segs.push({a,b,l,start:len}); len += l; }
+  const tiles = new Set();
+  for(let i=0;i<map.pts.length-1;i++){
+    let [c0,r0] = map.pts[i]; const [c1,r1] = map.pts[i+1];
+    const dc = Math.sign(c1-c0), dr = Math.sign(r1-r0);
+    while(true){ if(c0>=0&&c0<COLS&&r0>=0&&r0<ROWS) tiles.add(c0+','+r0); if(c0===c1&&r0===r1) break; c0+=dc; r0+=dr; }
+  }
+  return {segs, len, tiles, end: pts[pts.length-1], start: pts[0]};
+}
+function posAt(d){
+  for(const s of G.path.segs){
+    if(d <= s.start + s.l){ const k = (d - s.start)/s.l; return {x:s.a.x+(s.b.x-s.a.x)*k, y:s.a.y+(s.b.y-s.a.y)*k, dx:Math.sign(s.b.x-s.a.x), dy:Math.sign(s.b.y-s.a.y)}; }
+  }
+  return {x:G.path.end.x, y:G.path.end.y, dx:1, dy:0};
+}
+
+function startLevel(L, hard, relic){
+  const info = levelInfo(L, hard);
+  const lg = save.legacy;
+  const heroMax = 40 * (relic==='freeze' ? 0.65 : 1);
+  const startLives = BASE_LIVES + lg.tough + (relic==='heart' ? 2 : 0);
+  G = {
+    L, hard, relic, info, map:info.map, path:buildPath(info.map),
+    towers:[], enemies:[], projs:[], parts:[], texts:[],
+    coins: BASE_COINS + 15*(L-1) + lg.start*50 + (relic==='lucky' ? 200 : 0),
+    startLives, lives:startLives,
+    wave:0, totalWaves:info.waves, queue:[], spawnT:0, waveActive:false, nextT:-1,
+    time:0, speed:1, paused:false, over:false, earned:0,
+    heroMax, heroCd:heroMax*0.5, freezeT:0, secondUsed:false,
+    coinMul: relic==='sunflower' ? 1.2 : 1,
+    buildMul: relic==='boots' ? 0.8 : 1,
+    spdMul: info.spdMul * (relic==='magnet' ? 0.95 : 1),
+    sel:null, placing:null, hover:null, shake:0, flash:0,
+  };
+  bg = renderBackground(G.map, G.path);
+  const g = G; show('game'); G = g;
+  infoKey = '';
+  buildShop();
+  $('#g-level').textContent = `Lv ${L}${hard?' 🔥':''} · ${info.map.name}`;
+  const r = RELICS.find(x => x.id === relic);
+  $('#g-relic').textContent = `${r.icon} ${r.name}`;
+  $('#g-relic').title = r.desc;
+  $('#speedbtn').textContent = '1x';
+}
+
+/* waves */
+function makeWave(L, w, total, hard){
+  const R = rng32(L*7919 + w*104729 + (hard?13:0));
+  const pool = ['blob']; if(L>=2) pool.push('mini'); if(L>=3) pool.push('zoomer'); if(L>=5) pool.push('beetle');
+  if(w === 1) pool.length = Math.min(pool.length, 2);
+  let budget = (6 + w*3.2 + L*0.45*(0.3 + 0.7*w/total)) * (hard ? 1.2 : 1);
+  const out = [];
+  while(budget > 0){
+    const t = pool[Math.floor(R()*pool.length)], n = 2 + Math.floor(R()*3);
+    for(let i=0;i<n && budget>0;i++){ out.push({type:t, gap:ENEMIES[t].gap}); budget -= ENEMIES[t].cost; }
+    out[out.length-1].gap += 0.8;
+  }
+  if(w === total && levelInfo(L,hard).boss){ const n = 1 + Math.floor(L/20); for(let i=0;i<n;i++) out.push({type:'boss', gap:2.5}); }
+  return out;
+}
+function startWave(auto){
+  if(!G || G.over || G.wave >= G.totalWaves || G.queue.length) return;
+  if(!auto && G.wave > 0){
+    const bonus = Math.round((G.nextT > 0 ? Math.ceil(G.nextT)*2 + 4 : 10) * G.coinMul);
+    addCoins(bonus); floatText(CW/2, 40, `Early call +${bonus}🪙`, '#ffd166');
+  }
+  G.wave++;
+  G.queue = makeWave(G.L, G.wave, G.totalWaves, G.hard);
+  G.spawnT = 0.3; G.waveActive = true; G.nextT = -1;
+}
+function addCoins(n){ G.coins += n; G.earned += n; }
+
+function spawnEnemy(type){
+  const d = ENEMIES[type], hp = d.hp * G.info.hpMul;
+  const e = {id:uid++, type, hp, maxHp:hp, speed:d.speed*G.spdMul, dist:0, x:G.path.start.x, y:G.path.start.y, dx:1, dy:0,
+    r:d.r, armor:d.armor*(1+G.L/25), reward:Math.max(1, Math.round(d.reward*G.info.rewMul*G.coinMul)), lives:d.lives,
+    slowF:0, slowT:0, alive:true, wob:Math.random()*6, hit:0};
+  G.enemies.push(e);
+}
+
+/* towers */
+function towerStats(t){
+  const d = TOWERS[t.type], i = t.lvl-1, lg = save.legacy;
+  return {
+    dmg: d.dmg[i] * (t.type==='piggy' ? 1+0.05*lg.piggy : 1) * (t.type==='star' ? 1+0.05*lg.star : 1),
+    range: d.range[i] * T * (t.type==='pomsky' ? 1+0.05*lg.pomsky : 1),
+    rate: d.rate[i],
+    slow: d.slow ? d.slow[i] : 0,
+    slowDur: d.slowDur ? d.slowDur[i] + 0.5*lg.axo : 0,
+    splash: d.splash ? d.splash[i]*T : 0,
+  };
+}
+const towerAt = (c,r) => G.towers.find(t => t.c===c && t.r===r);
+const canBuild = (c,r) => c>=0 && c<COLS && r>=0 && r<ROWS && !G.path.tiles.has(c+','+r) && !towerAt(c,r);
+function placeTower(type, c, r){
+  const d = TOWERS[type];
+  if(!canBuild(c,r) || G.coins < d.cost) return false;
+  G.coins -= d.cost;
+  const bt = BUILD_TIME * G.buildMul;
+  const t = {id:uid++, type, c, r, x:(c+0.5)*T, y:(r+0.5)*T, lvl:1, cd:0, build:bt, buildMax:bt, spent:d.cost, face:1, kick:0};
+  G.towers.push(t); G.sel = t; puff(t.x, t.y, '#fff', 10);
+  return true;
+}
+function upgradeTower(t){
+  if(!t || t.lvl >= 3 || t.build > 0) return;
+  const cost = TOWERS[t.type].up[t.lvl-1];
+  if(G.coins < cost) return;
+  G.coins -= cost; t.spent += cost; t.lvl++;
+  t.build = t.buildMax = UPGRADE_TIME * G.buildMul;
+  puff(t.x, t.y, '#ffd166', 14);
+}
+function sellTower(t){
+  if(!t) return;
+  const back = Math.floor(t.spent * SELL_BACK);
+  G.coins += back; floatText(t.x, t.y-20, `+${back}🪙`, '#ffd166');
+  G.towers = G.towers.filter(x => x !== t); G.sel = null; puff(t.x, t.y, '#c4b4e6', 10);
+}
+
+/* combat */
+function damage(e, amt, pierce){
+  if(!e.alive) return;
+  const a = pierce ? amt : Math.max(amt*0.2, amt - e.armor);
+  e.hp -= a; e.hit = 0.12;
+  if(e.hp <= 0){
+    e.alive = false;
+    addCoins(e.reward);
+    floatText(e.x, e.y-14, `+${e.reward}`, '#ffd166');
+    puff(e.x, e.y, e.type==='mini'?'#c38cff':e.type==='zoomer'?'#ff9a4d':e.type==='beetle'?'#a9a6bd':e.type==='boss'?'#9fe0ff':'#8ee68a', e.type==='boss'?40:12);
+  }
+}
+function leak(e){
+  e.alive = false;
+  G.lives -= e.lives; G.shake = 0.35;
+  floatText(G.path.end.x, G.path.end.y-30, `-${e.lives}❤️`, '#ff6b8a');
+  if(G.relic === 'thorn'){
+    for(const o of G.enemies) if(o.alive){ damage(o, o.maxHp*0.1, true); puff(o.x, o.y, '#7be0a8', 4); }
+  }
+  if(G.lives <= 0) lose();
+}
+function heroPower(){
+  if(!G || G.over || G.paused || G.heroCd > 0) return;
+  G.heroCd = G.heroMax; G.freezeT = 3; G.flash = 0.6;
+  for(const e of G.enemies) if(e.alive){ damage(e, e.maxHp*0.05, true); puff(e.x, e.y, '#9fe0ff', 5); }
+}
+function findTarget(t, range){
+  let best = null;
+  for(const e of G.enemies){
+    if(!e.alive) continue;
+    if((e.x-t.x)**2 + (e.y-t.y)**2 <= range*range && (!best || e.dist > best.dist)) best = e;
+  }
+  return best;
+}
+
+/* effects */
+function puff(x, y, col, n){
+  for(let i=0;i<n;i++){ const a=Math.random()*6.28, s=40+Math.random()*120; G.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:0.5+Math.random()*0.4,col,r:2+Math.random()*3}); }
+}
+function floatText(x, y, text, col){ G.texts.push({x, y, text, col, t:1.1}); }
+
+/* =========================================================
+   UPDATE
+   ========================================================= */
+function update(dt){
+  G.time += dt;
+  // spawning
+  if(G.queue.length){
+    G.spawnT -= dt;
+    if(G.spawnT <= 0){ const it = G.queue.shift(); spawnEnemy(it.type); G.spawnT = it.gap; }
+  } else if(G.waveActive && !G.enemies.some(e=>e.alive)){
+    G.waveActive = false;
+    const bonus = Math.round((15 + 3*G.wave) * G.coinMul);
+    addCoins(bonus); floatText(CW/2, CH/2, `Wave ${G.wave} cleared! +${bonus}🪙`, '#7be0a8');
+    if(G.wave < G.totalWaves) G.nextT = 8;
+  }
+  if(G.nextT > 0){ G.nextT -= dt; if(G.nextT <= 0){ G.nextT = -1; startWave(true); } }
+  if(G.heroCd > 0) G.heroCd -= dt;
+  if(G.freezeT > 0) G.freezeT -= dt;
+  if(G.shake > 0) G.shake -= dt;
+  if(G.flash > 0) G.flash -= dt;
+
+  // enemies
+  const frozen = G.freezeT > 0;
+  for(const e of G.enemies){
+    if(!e.alive) continue;
+    if(e.hit > 0) e.hit -= dt;
+    if(!frozen){
+      let sp = e.speed;
+      if(e.slowT > 0){ e.slowT -= dt; sp *= 1 - e.slowF; } else e.slowF = 0;
+      e.dist += sp * T * dt;
+      e.wob += dt * 8;
+    }
+    const p = posAt(e.dist); e.x = p.x; e.y = p.y; e.dx = p.dx; e.dy = p.dy;
+    if(e.dist >= G.path.len){ leak(e); if(G.over || G.paused) return; }
+  }
+
+  // towers
+  for(const t of G.towers){
+    if(t.kick > 0) t.kick -= dt;
+    if(t.build > 0){ t.build -= dt; continue; }
+    t.cd -= dt;
+    if(t.cd > 0) continue;
+    const s = towerStats(t), tg = findTarget(t, s.range);
+    if(!tg) continue;
+    t.cd = s.rate; t.face = tg.x < t.x ? -1 : 1; t.kick = 0.15;
+    const d = TOWERS[t.type];
+    G.projs.push({kind:t.type, x:t.x, y:t.y-8, tg, tx:tg.x, ty:tg.y, sp:d.ps*T, dmg:s.dmg, slow:s.slow, slowDur:s.slowDur, splash:s.splash, pierce:!!d.pierce, spin:0});
+  }
+
+  // projectiles
+  for(const p of G.projs){
+    if(p.tg.alive){ p.tx = p.tg.x; p.ty = p.tg.y; }
+    const dx = p.tx-p.x, dy = p.ty-p.y, dist = Math.hypot(dx,dy), step = p.sp*dt;
+    p.spin += dt*12;
+    if(dist <= step + 4){
+      p.done = true;
+      if(p.splash){
+        for(const e of G.enemies) if(e.alive && (e.x-p.tx)**2+(e.y-p.ty)**2 <= p.splash*p.splash) damage(e, p.dmg, false);
+        puff(p.tx, p.ty, '#ffd84d', 10); G.parts.push({ring:true, x:p.tx, y:p.ty, r:p.splash, t:0.3});
+      } else if(p.tg.alive){
+        damage(p.tg, p.dmg, p.pierce);
+        if(p.slow){ p.tg.slowF = Math.max(p.tg.slowF, p.slow); p.tg.slowT = Math.max(p.tg.slowT, p.slowDur); }
+        puff(p.tx, p.ty, p.kind==='axolotl'?'#9fe0ff':p.kind==='pomsky'?'#d8ecff':'#ffb3d9', 3);
+      }
+    } else { p.x += dx/dist*step; p.y += dy/dist*step; }
+  }
+  G.projs = G.projs.filter(p => !p.done);
+
+  for(const q of G.parts){ q.t -= dt; if(!q.ring){ q.x += q.vx*dt; q.y += q.vy*dt; q.vx *= 0.9; q.vy *= 0.9; } }
+  G.parts = G.parts.filter(q => q.t > 0);
+  for(const f of G.texts){ f.t -= dt; f.y -= 28*dt; }
+  G.texts = G.texts.filter(f => f.t > 0);
+  G.enemies = G.enemies.filter(e => e.alive);
+
+  if(G.wave >= G.totalWaves && !G.queue.length && !G.enemies.length && !G.over) win();
+}
+
+/* =========================================================
+   WIN / LOSE
+   ========================================================= */
+function bankCoins(extra){
+  const total = Math.round(G.earned + extra);
+  save.bank += total; persist();
+  return total;
+}
+function win(){
+  G.over = true;
+  const lost = G.startLives - G.lives;
+  const stars = lost === 0 ? 3 : lost <= Math.ceil(G.startLives*0.3) ? 2 : 1;
+  const key = (G.hard?'h':'n') + G.L, before = totalStars(), prev = save.stars[key] || 0;
+  if(stars > prev) save.stars[key] = stars;
+  const after = totalStars();
+  const winBonus = Math.round((40 + 8*G.L) * (G.hard ? 1.5 : 1) * G.coinMul);
+  const banked = bankCoins(winBonus);
+  const newRelics = RELICS.filter((r,i) => i*RELIC_STEP > before && i*RELIC_STEP <= after);
+  const L = G.L, hard = G.hard, hasNext = L < NUM_LEVELS;
+  const hardJustOpened = !hard && prev === 0;
+  openModal(`<h2>🎉 Level ${L} cleared!</h2>
+    <div class="bigstars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
+    <div class="muted">${lost===0 ? 'Perfect, no lives lost!' : `${lost} ${lost===1?'life':'lives'} lost`}${stars>prev && prev>0 ? ' · New best!' : ''}</div>
+    <p>🪙 Earned in level: <b>${fmt(G.earned)}</b><br>🏆 Victory bonus: <b>${fmt(winBonus)}</b><br>🐷 Banked <b>+${fmt(banked)}</b>, so your Piggy Bank now holds <b>${fmt(save.bank)}</b></p>
+    ${hardJustOpened ? '<div class="muted">🔥 Hard Mode unlocked for this level!</div>' : ''}
+    ${newRelics.map(r=>`<div class="unlock">🔓 New Relic unlocked: <b>${r.icon} ${r.name}</b><br><span class="muted">${r.desc}</span></div>`).join('')}
+    <div class="mbtns">
+      <button class="btn" data-go="levels">Level Map</button>
+      <button class="btn gold" data-go="legacy">🏛 Legacy</button>
+      ${hasNext && !hard ? `<button class="btn primary" id="next-lvl">Next Level ▶</button>` : `<button class="btn primary" id="next-lvl">Replay ↻</button>`}
+    </div>`, true);
+  $('#next-lvl').onclick = () => openRelicPick(hasNext && !hard ? L+1 : L, hard);
+}
+function lose(){
+  if(G.relic === 'second' && !G.secondUsed){
+    G.secondUsed = true;
+    for(const e of G.enemies){ if(e.alive){ e.alive = false; puff(e.x, e.y, '#ffb3d9', 6); } }
+    G.lives = G.startLives; G.paused = true;
+    openModal(`<h2>🔁 Second Chance!</h2><p>Your relic swept the field and refilled your lives to <b>${G.startLives}</b>.</p>
+      <div class="mbtns"><button class="btn primary" id="sc-go">Keep defending!</button></div>`, true);
+    $('#sc-go').onclick = () => { closeModal(); G.paused = false; };
+    return;
+  }
+  G.over = true; G.lives = 0;
+  const banked = bankCoins(0), L = G.L, hard = G.hard;
+  openModal(`<h2>😿 The blobs got through!</h2>
+    <p>You reached wave <b>${G.wave}</b> of ${G.totalWaves}.</p>
+    <p>🐷 You keep every coin you earned: <b>+${fmt(banked)}</b> to your Piggy Bank (now ${fmt(save.bank)}).</p>
+    <p class="muted">Tip: Axolotls slow enemies down, and Stars are great against groups.</p>
+    <div class="mbtns"><button class="btn" data-go="levels">Level Map</button><button class="btn gold" data-go="legacy">🏛 Legacy</button><button class="btn primary" id="retry">Retry ↻</button></div>`, true);
+  $('#retry').onclick = () => openRelicPick(L, hard);
+}
+function pauseMenu(){
+  if(!G || G.over) return;
+  G.paused = true;
+  openModal(`<h2>⏸ Paused</h2>
+    <p class="muted">If you quit, you still keep the ${fmt(G.earned)} coins earned so far.</p>
+    <div class="mbtns"><button class="btn" id="p-quit">Quit to Map</button><button class="btn primary" id="p-resume">Resume</button></div>`, true);
+  $('#p-resume').onclick = () => { closeModal(); G.paused = false; };
+  $('#p-quit').onclick = () => { bankCoins(0); G.over = true; closeModal(); show('levels'); };
+}
+
+/* =========================================================
+   DRAWING: background
+   ========================================================= */
+function renderBackground(map, path){
+  const c = document.createElement('canvas'); c.width = CW*DPR; c.height = CH*DPR;
+  const g = c.getContext('2d'); g.scale(DPR, DPR);
+  const R = rng32(map.name.length*999 + map.pts.length);
+  for(let r=0;r<ROWS;r++) for(let col=0;col<COLS;col++){
+    g.fillStyle = map.grass[(r+col)%2]; g.fillRect(col*T, r*T, T, T);
+  }
+  // decorations
+  for(let r=0;r<ROWS;r++) for(let col=0;col<COLS;col++){
+    if(path.tiles.has(col+','+r) || R() > 0.22) continue;
+    const x = col*T + 10 + R()*40, y = r*T + 10 + R()*40, k = R();
+    if(k < 0.4){ // flower
+      const pc = ['#fff','#ffd166','#ff9ec7','#c9a7ff'][Math.floor(R()*4)];
+      for(let i=0;i<5;i++){ const a=i*1.2566; g.fillStyle=pc; g.beginPath(); g.arc(x+Math.cos(a)*3.5, y+Math.sin(a)*3.5, 2.6, 0, 7); g.fill(); }
+      g.fillStyle = '#ffcf4d'; g.beginPath(); g.arc(x, y, 2, 0, 7); g.fill();
+    } else if(k < 0.7){ // little crater
+      g.fillStyle = 'rgba(0,0,0,.08)'; g.beginPath(); g.ellipse(x, y, 8, 5, 0, 0, 7); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(x-1, y-1.5, 6, 3, 0, 0, 7); g.fill();
+    } else { // tuft
+      g.strokeStyle = 'rgba(40,90,60,.35)'; g.lineWidth = 2; g.lineCap = 'round';
+      for(let i=-1;i<=1;i++){ g.beginPath(); g.moveTo(x+i*3, y+4); g.lineTo(x+i*5, y-4); g.stroke(); }
+    }
+  }
+  // path
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  const pts = map.pts.map(([cc,r]) => [(cc+0.5)*T, (r+0.5)*T]);
+  const stroke = (w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(...pts[0]); for(const p of pts.slice(1)) g.lineTo(...p); g.stroke(); };
+  stroke(T*0.98, map.edge); stroke(T*0.84, map.path);
+  g.setLineDash([2, 14]); stroke(4, 'rgba(0,0,0,.08)'); g.setLineDash([]);
+  // vignette
+  const v = g.createRadialGradient(CW/2, CH/2, CH*0.4, CW/2, CH/2, CW*0.7);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(30,10,60,.28)');
+  g.fillStyle = v; g.fillRect(0, 0, CW, CH);
+  return c;
+}
+
+/* =========================================================
+   DRAWING: critters
+   ========================================================= */
+function circ(x, y, r, col){ ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); }
+function ell(x, y, rx, ry, col){ ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill(); }
+function tri(a, b, c, d, e, f, col){ ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.lineTo(e,f); ctx.closePath(); ctx.fill(); }
+function eyes(dx, y, r){ circ(-dx, y, r, '#2a1d38'); circ(dx, y, r, '#2a1d38'); circ(-dx+r*0.35, y-r*0.4, r*0.35, '#fff'); circ(dx+r*0.35, y-r*0.4, r*0.35, '#fff'); }
+function smile(y, w){ ctx.strokeStyle = '#2a1d38'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, y, w, 0.2, Math.PI-0.2); ctx.stroke(); }
+function starPath(R, r){ ctx.beginPath(); for(let i=0;i<10;i++){ const a = -Math.PI/2 + i*Math.PI/5, rr = i%2 ? r : R; ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } ctx.closePath(); }
+
+function drawHat(lvl, top){
+  if(lvl === 2){ // bow
+    tri(0, top+2, -9, top-4, -9, top+7, '#7fd3ff'); tri(0, top+2, 9, top-4, 9, top+7, '#7fd3ff'); circ(0, top+2, 3, '#4fb4ea');
+  } else if(lvl === 3){ // crown
+    ctx.fillStyle = '#ffd84d'; ctx.beginPath();
+    ctx.moveTo(-10, top+4); ctx.lineTo(-10, top-6); ctx.lineTo(-5, top-1); ctx.lineTo(0, top-9); ctx.lineTo(5, top-1); ctx.lineTo(10, top-6); ctx.lineTo(10, top+4); ctx.closePath(); ctx.fill();
+    circ(0, top-1, 1.8, '#ff6b8a');
+  }
+}
+const CRITTER = {
+  piggy(lvl){
+    tri(-14,-6,-12,-19,-3,-11,'#ff8fb6'); tri(14,-6,12,-19,3,-11,'#ff8fb6');
+    ell(0, 1, 17, 15, '#ffb3cf');
+    ell(0, 6, 7.5, 5.5, '#ff8fb6'); circ(-2.6, 6, 1.6, '#a8466c'); circ(2.6, 6, 1.6, '#a8466c');
+    eyes(6.5, -3, 2.3);
+    circ(-11, 4, 2.8, 'rgba(255,80,140,.35)'); circ(11, 4, 2.8, 'rgba(255,80,140,.35)');
+    drawHat(lvl, -16);
+  },
+  pomsky(lvl){
+    tri(-15,-4,-11,-21,-2,-11,'#7d869c'); tri(15,-4,11,-21,2,-11,'#7d869c');
+    tri(-12,-7,-10,-16,-5,-10,'#ffc6dc'); tri(12,-7,10,-16,5,-10,'#ffc6dc');
+    ell(0, 1, 17, 15, '#7d869c');
+    ell(0, 6, 12, 10, '#fff'); ell(-6, -2, 4.5, 3.5, '#fff'); ell(6, -2, 4.5, 3.5, '#fff');
+    circ(-5.5, 0, 2.6, '#3fa2f0'); circ(5.5, 0, 2.6, '#3fa2f0'); circ(-5, -0.8, 0.9, '#fff'); circ(6, -0.8, 0.9, '#fff');
+    ell(0, 6, 2.6, 2, '#2a1d38'); smile(8, 3);
+    drawHat(lvl, -16);
+  },
+  axolotl(lvl){
+    ctx.strokeStyle = '#ff6fa8'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    for(const s of [-1,1]) for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(s*12, -4+i*5); ctx.lineTo(s*22, -10+i*7); ctx.stroke(); }
+    ell(0, 2, 17, 13, '#ffcde4');
+    eyes(8, 0, 2.3); smile(4, 4);
+    circ(-12, 6, 2.6, 'rgba(255,90,150,.35)'); circ(12, 6, 2.6, 'rgba(255,90,150,.35)');
+    drawHat(lvl, -12);
+  },
+  star(lvl){
+    ctx.fillStyle = '#ffd84d'; ctx.strokeStyle = '#f0a800'; ctx.lineWidth = 2.5; starPath(20, 9); ctx.fill(); ctx.stroke();
+    eyes(4.5, -1, 2); smile(2.5, 3);
+    drawHat(lvl, -18);
+  },
+};
+const PAD = {piggy:'#ff8fb6', pomsky:'#8fa0c8', axolotl:'#ff9cc8', star:'#ffc94d'};
+
+function drawTower(t, ghost){
+  const s = ghost ? null : towerStats(t);
+  ctx.save(); ctx.translate(t.x, t.y);
+  ell(0, 18, 20, 6, 'rgba(0,0,0,.18)');
+  ctx.globalAlpha = ghost ? 0.55 : (t.build > 0 ? 0.6 : 1);
+  ctx.fillStyle = PAD[t.type]; ctx.beginPath(); ctx.roundRect(-24, 4, 48, 18, 9); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.roundRect(-20, 6, 40, 6, 3); ctx.fill();
+  const bob = Math.sin((G.time + t.c*0.7) * 3) * 1.4 - (t.kick > 0 ? t.kick*12 : 0);
+  ctx.translate(0, -4 + bob);
+  ctx.scale(t.face || 1, 1);
+  CRITTER[t.type](t.lvl);
+  ctx.restore();
+  if(!ghost && t.build > 0){
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(t.x, t.y, 26, -Math.PI/2, -Math.PI/2 + Math.PI*2*(1 - t.build/t.buildMax)); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🔨', t.x+20, t.y-18);
+  }
+  if(!ghost){ ctx.fillStyle = '#ffd84d'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★'.repeat(t.lvl), t.x, t.y+27); }
+}
+
+function drawEnemy(e){
+  ctx.save(); ctx.translate(e.x, e.y);
+  const sq = Math.sin(e.wob) * 0.08, r = e.r;
+  ell(0, r*0.8, r*0.9, r*0.3, 'rgba(0,0,0,.2)');
+  if(e.hit > 0) ctx.filter = 'brightness(1.8)';
+  const flip = e.dx < 0 ? -1 : 1;
+  if(e.type === 'blob' || e.type === 'mini'){
+    ctx.scale(1+sq, 1-sq);
+    ctx.fillStyle = e.type==='blob' ? '#7ee07a' : '#c38cff';
+    ctx.beginPath(); ctx.arc(0, 0, r, Math.PI, 0);
+    for(let i=0;i<=4;i++) ctx.quadraticCurveTo(r - (i+0.5)*r/2.5, r*0.85 + (i%2?3:-1), r - (i+1)*r/2.5, r*0.6);
+    ctx.closePath(); ctx.fill();
+    circ(-r*0.35, -r*0.3, r*0.22, 'rgba(255,255,255,.4)');
+    circ(-r*0.3, -r*0.05, r*0.24, '#fff'); circ(r*0.3, -r*0.05, r*0.24, '#fff');
+    circ(-r*0.3+flip*1.5, -r*0.02, r*0.12, '#1d1530'); circ(r*0.3+flip*1.5, -r*0.02, r*0.12, '#1d1530');
+  } else if(e.type === 'zoomer'){
+    ctx.scale(flip, 1);
+    const tail = ctx.createLinearGradient(-r*3, 0, 0, 0); tail.addColorStop(0,'rgba(255,200,80,0)'); tail.addColorStop(1,'rgba(255,170,60,.8)');
+    ctx.fillStyle = tail; ctx.beginPath(); ctx.moveTo(0, -r*0.8); ctx.lineTo(-r*3, 0); ctx.lineTo(0, r*0.8); ctx.fill();
+    circ(0, 0, r, '#ff9a4d'); circ(-r*0.3, -r*0.35, r*0.3, '#ffc48a');
+    ctx.strokeStyle = '#1d1530'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(r*0.05, -r*0.45); ctx.lineTo(r*0.45, -r*0.25); ctx.stroke();
+    circ(r*0.35, -r*0.05, r*0.15, '#1d1530');
+  } else if(e.type === 'beetle'){
+    ctx.scale(flip, 1);
+    ctx.strokeStyle = '#4a4660'; ctx.lineWidth = 2.5;
+    for(let i=-1;i<=1;i++){ const k = Math.sin(e.wob*1.5+i)*3; ctx.beginPath(); ctx.moveTo(i*6, 4); ctx.lineTo(i*8+k, r*0.9); ctx.stroke(); }
+    ell(0, 0, r*1.1, r*0.8, '#8d8aa0');
+    ctx.strokeStyle = '#6c6984'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-2, -r*0.8); ctx.lineTo(-2, r*0.6); ctx.stroke();
+    ell(-r*0.4, -r*0.3, r*0.3, r*0.18, 'rgba(255,255,255,.25)');
+    circ(r*0.95, -2, r*0.4, '#6c6984'); circ(r*1.05, -4, 2.2, '#ff6b8a');
+  } else if(e.type === 'boss'){
+    ctx.translate(0, Math.sin(e.wob*0.5)*3);
+    circ(0, -r*0.3, r*0.55, 'rgba(160,230,255,.65)');
+    circ(0, -r*0.25, r*0.3, '#8ee68a'); circ(-r*0.1, -r*0.3, r*0.08, '#1d1530'); circ(r*0.1, -r*0.3, r*0.08, '#1d1530');
+    ell(0, 0, r*1.35, r*0.42, '#b8c4d8'); ell(0, -r*0.08, r*1.1, r*0.2, '#dde5f2');
+    for(let i=0;i<5;i++) circ(-r + i*r*0.5, r*0.12, 3, (Math.floor(G.time*4)+i)%2 ? '#ffd84d' : '#ff6b8a');
+  }
+  ctx.filter = 'none';
+  ctx.restore();
+  if(e.slowT > 0){ ctx.strokeStyle = 'rgba(143,216,255,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r+4, 0, Math.PI*2); ctx.stroke(); }
+  if(G.freezeT > 0){ ctx.fillStyle = 'rgba(160,225,255,.45)'; ctx.beginPath(); ctx.arc(e.x, e.y, e.r+3, 0, Math.PI*2); ctx.fill(); }
+  if(e.hp < e.maxHp){
+    const w = Math.max(24, e.r*2), y = e.y - e.r - 10;
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(e.x-w/2, y, w, 5);
+    ctx.fillStyle = e.hp/e.maxHp > 0.5 ? '#7be0a8' : e.hp/e.maxHp > 0.25 ? '#ffd166' : '#ff6b8a';
+    ctx.fillRect(e.x-w/2, y, w*Math.max(0,e.hp/e.maxHp), 5);
+  }
+}
+
+function drawBase(){
+  const {x, y} = G.path.end;
+  ctx.save(); ctx.translate(x, y + Math.sin(G.time*2)*1.5);
+  ell(0, 22, 26, 6, 'rgba(0,0,0,.2)');
+  ctx.fillStyle = '#fff3e3'; ctx.beginPath(); ctx.roundRect(-20, -6, 40, 28, 4); ctx.fill();
+  tri(-26, -4, 0, -26, 26, -4, '#ff8fc4');
+  ctx.fillStyle = '#ffb3d9'; ctx.fillRect(-20, -4, 40, 3);
+  ctx.fillStyle = '#9b6b4a'; ctx.beginPath(); ctx.roundRect(-6, 6, 12, 16, [6,6,0,0]); ctx.fill();
+  ctx.fillStyle = '#9fe0ff'; ctx.fillRect(9, 2, 8, 8); ctx.fillRect(-17, 2, 8, 8);
+  ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('💖', 0, -10);
+  ctx.restore();
+}
+function drawPortal(){
+  const s = G.path.segs[0];
+  const k = Math.min(1, (T*0.5)/s.l), x = s.a.x + (s.b.x-s.a.x)*k, y = s.a.y + (s.b.y-s.a.y)*k;
+  ctx.save(); ctx.translate(x, y);
+  for(let i=0;i<3;i++){
+    ctx.rotate(G.time*(1+i*0.4));
+    ctx.strokeStyle = ['#c38cff','#ff8fc4','#8fd8ff'][i]; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, 0, 22-i*5, 14-i*3, 0, 0, Math.PI*1.4); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawProj(p){
+  ctx.save(); ctx.translate(p.x, p.y);
+  if(p.kind === 'piggy'){ circ(0, 0, 5, '#ff8fb6'); circ(-1.5, -1.5, 2, '#ffd6e6'); }
+  else if(p.kind === 'pomsky'){ ctx.rotate(Math.atan2(p.ty-p.y, p.tx-p.x)); ctx.strokeStyle = '#d8ecff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(-4, 0, 8, -0.9, 0.9); ctx.stroke(); ctx.beginPath(); ctx.arc(-10, 0, 8, -0.9, 0.9); ctx.stroke(); }
+  else if(p.kind === 'axolotl'){ ctx.strokeStyle = '#9fe0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 6, 0, 7); ctx.stroke(); circ(-2, -2, 1.5, '#fff'); }
+  else { ctx.rotate(p.spin); ctx.fillStyle = '#ffd84d'; starPath(8, 3.5); ctx.fill(); }
+  ctx.restore();
+}
+
+function draw(){
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, CW, CH);
+  ctx.save();
+  if(G.shake > 0) ctx.translate((Math.random()-0.5)*8*G.shake, (Math.random()-0.5)*8*G.shake);
+  ctx.drawImage(bg, 0, 0, CW, CH);
+  drawPortal();
+
+  const h = G.hover;
+  // range preview
+  const rangeOf = (type, lvl, c, r) => { const s = towerStats({type, lvl}); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc((c+0.5)*T, (r+0.5)*T, s.range, 0, 7); ctx.fill(); ctx.stroke(); };
+  if(G.sel) rangeOf(G.sel.type, G.sel.lvl, G.sel.c, G.sel.r);
+  if(G.placing && h){
+    const ok = canBuild(h.c, h.r);
+    ctx.fillStyle = ok ? 'rgba(123,224,168,.35)' : 'rgba(255,107,138,.35)'; ctx.fillRect(h.c*T, h.r*T, T, T);
+    if(ok) rangeOf(G.placing, 1, h.c, h.r);
+  } else if(h && !towerAt(h.c, h.r) && canBuild(h.c, h.r)){
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; ctx.strokeRect(h.c*T+3, h.r*T+3, T-6, T-6);
+  }
+
+  const things = [...G.towers.map(t=>({y:t.y, f:()=>drawTower(t)})), ...G.enemies.map(e=>({y:e.y, f:()=>drawEnemy(e)})), {y:G.path.end.y, f:drawBase}];
+  if(G.placing && h && canBuild(h.c, h.r)) things.push({y:(h.r+0.5)*T, f:()=>drawTower({type:G.placing, lvl:1, x:(h.c+0.5)*T, y:(h.r+0.5)*T, c:h.c, face:1}, true)});
+  things.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+  if(G.sel){ ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(G.sel.c*T+2, G.sel.r*T+2, T-4, T-4, 10); ctx.stroke(); }
+
+  G.projs.forEach(drawProj);
+  for(const q of G.parts){
+    if(q.ring){ ctx.strokeStyle = `rgba(255,216,77,${q.t*2})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(q.x, q.y, q.r*(1.2-q.t), 0, 7); ctx.stroke(); }
+    else { ctx.globalAlpha = Math.min(1, q.t*2); circ(q.x, q.y, q.r, q.col); ctx.globalAlpha = 1; }
+  }
+  ctx.textAlign = 'center'; ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
+  for(const f of G.texts){ ctx.globalAlpha = Math.min(1, f.t*2); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,15,50,.8)'; ctx.strokeText(f.text, f.x, f.y); ctx.fillStyle = f.col; ctx.fillText(f.text, f.x, f.y); }
+  ctx.globalAlpha = 1;
+  if(G.freezeT > 0 || G.flash > 0){ ctx.fillStyle = `rgba(150,220,255,${Math.max(G.flash*0.5, 0.12)})`; ctx.fillRect(0, 0, CW, CH); }
+  ctx.restore();
+
+  if(G.wave === 0 && !G.queue.length){
+    ctx.fillStyle = 'rgba(25,15,50,.75)'; ctx.beginPath(); ctx.roundRect(CW/2-220, 14, 440, 54, 14); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px "Trebuchet MS",sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Pick a critter on the right, tap a grass tile to build,', CW/2, 36);
+    ctx.fillText('then press ▶ Start Wave!', CW/2, 58);
+  }
+}
+
+/* =========================================================
+   UI (sidebar + HUD)
+   ========================================================= */
+function buildShop(){
+  $('#shop').innerHTML = Object.entries(TOWERS).map(([id,d]) =>
+    `<div class="tcard" data-t="${id}"><span class="key">${d.key}</span><div class="ti">${d.icon}</div><div class="tn">${d.name}</div><div class="tc">${d.cost}🪙</div></div>`).join('');
+}
+$('#shop').addEventListener('click', e => {
+  const c = e.target.closest('[data-t]'); if(!c || !G) return;
+  selectBuild(c.dataset.t);
+});
+function selectBuild(type){
+  if(!G || G.over) return;
+  G.placing = G.placing === type ? null : type; G.sel = null; infoKey = '';
+}
+
+let infoKey = '';
+function renderInfo(){
+  const t = G.sel;
+  const key = t ? `t${t.id}-${t.lvl}-${t.build>0}-${G.coins>=(TOWERS[t.type].up[t.lvl-1]||1e9)}` : G.placing ? 'p'+G.placing : 'none';
+  if(key === infoKey) return; infoKey = key;
+  const el = $('#info');
+  if(t){
+    const d = TOWERS[t.type], s = towerStats(t), up = d.up[t.lvl-1];
+    const next = t.lvl < 3 ? towerStats({type:t.type, lvl:t.lvl+1}) : null;
+    el.innerHTML = `<div class="ptitle">${d.icon} ${d.name} · Lv ${t.lvl}</div>
+      <div class="row"><span>Damage</span><b>${Math.round(s.dmg)}${next?` → ${Math.round(next.dmg)}`:''}</b></div>
+      <div class="row"><span>Range</span><b>${(s.range/T).toFixed(1)}${next?` → ${(next.range/T).toFixed(1)}`:''}</b></div>
+      <div class="row"><span>Shots / sec</span><b>${(1/s.rate).toFixed(1)}${next?` → ${(1/next.rate).toFixed(1)}`:''}</b></div>
+      ${s.slow ? `<div class="row"><span>Slow</span><b>${Math.round(s.slow*100)}% for ${s.slowDur.toFixed(1)}s</b></div>` : ''}
+      ${s.splash ? `<div class="row"><span>Splash radius</span><b>${(s.splash/T).toFixed(1)}</b></div>` : ''}
+      <div class="muted" style="margin:6px 0">${d.desc}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        ${t.lvl<3 ? `<button class="btn gold small" id="up-btn" style="flex:1" ${G.coins<up||t.build>0?'disabled':''}>⬆ Upgrade ${up}🪙</button>` : '<span class="max" style="flex:1">★ Max level</span>'}
+        <button class="btn small" id="sell-btn">Sell +${Math.floor(t.spent*SELL_BACK)}</button>
+      </div>`;
+    const ub = $('#up-btn'); if(ub) ub.onclick = () => { upgradeTower(G.sel); infoKey=''; };
+    $('#sell-btn').onclick = () => { sellTower(G.sel); infoKey=''; };
+  } else if(G.placing){
+    const d = TOWERS[G.placing], s = towerStats({type:G.placing, lvl:1});
+    el.innerHTML = `<div class="ptitle">${d.icon} Building: ${d.name}</div><div>${d.desc}</div>
+      <div class="row" style="margin-top:6px"><span>Damage</span><b>${Math.round(s.dmg)}</b></div>
+      <div class="row"><span>Range</span><b>${(s.range/T).toFixed(1)}</b></div>
+      <div class="muted" style="margin-top:6px">Tap a grass tile to place it. Esc or right-click cancels.</div>`;
+  } else {
+    el.innerHTML = `<div class="ptitle">Tips</div>
+      <div>Tap a critter to upgrade it (Lv 1 → 2 → 3) or sell it.</div>
+      <div class="muted" style="margin-top:6px">Keys: 1–4 build · Space wave · F freeze · Esc cancel</div>
+      <div class="legsum" style="margin-top:8px">${legacySummary()}</div>`;
+  }
+}
+
+function updateUI(){
+  $('#g-lives').textContent = Math.max(0, G.lives);
+  $('#g-coins').textContent = fmt(G.coins);
+  $('#g-wave').textContent = `${G.wave} / ${G.totalWaves}`;
+  document.querySelectorAll('.tcard').forEach(c => {
+    c.classList.toggle('on', G.placing === c.dataset.t);
+    c.classList.toggle('poor', G.coins < TOWERS[c.dataset.t].cost);
+  });
+  const wb = $('#wavebtn');
+  if(G.wave === 0){ wb.textContent = '▶ Start Wave'; wb.disabled = false; }
+  else if(G.wave >= G.totalWaves){ wb.textContent = '🏁 Final wave'; wb.disabled = true; }
+  else if(G.queue.length){ wb.textContent = `🌊 Wave ${G.wave} incoming…`; wb.disabled = true; }
+  else if(G.nextT > 0){ wb.textContent = `⏩ Next in ${Math.ceil(G.nextT)}s (+${Math.round((Math.ceil(G.nextT)*2+4)*G.coinMul)}🪙)`; wb.disabled = false; }
+  else { wb.textContent = `⏩ Call wave ${G.wave+1} early (+${Math.round(10*G.coinMul)}🪙)`; wb.disabled = false; }
+  const hb = $('#hero');
+  hb.disabled = G.heroCd > 0 || G.over;
+  hb.textContent = G.heroCd > 0 ? `❄️ Recharging ${Math.ceil(G.heroCd)}s` : '❄️ Cosmic Freeze!';
+  $('#hero-bar').style.width = (100 * (1 - Math.max(0, G.heroCd)/G.heroMax)) + '%';
+  renderInfo();
+}
+
+$('#wavebtn').onclick = () => startWave(false);
+$('#hero').onclick = heroPower;
+$('#pausebtn').onclick = pauseMenu;
+$('#speedbtn').onclick = () => { if(!G) return; G.speed = G.speed === 1 ? 2 : G.speed === 2 ? 3 : 1; $('#speedbtn').textContent = G.speed + 'x'; };
+
+/* input */
+function tileFromEvent(e){
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * CW, y = (e.clientY - r.top) / r.height * CH;
+  return {c: Math.floor(x/T), r: Math.floor(y/T)};
+}
+cv.addEventListener('pointermove', e => { if(G) G.hover = tileFromEvent(e); });
+cv.addEventListener('pointerleave', () => { if(G) G.hover = null; });
+cv.addEventListener('contextmenu', e => { e.preventDefault(); if(G){ G.placing = null; G.sel = null; infoKey=''; } });
+cv.addEventListener('pointerdown', e => {
+  if(!G || G.over || G.paused || e.button === 2) return;
+  const {c, r} = tileFromEvent(e); G.hover = {c, r};
+  const t = towerAt(c, r);
+  if(G.placing){
+    if(placeTower(G.placing, c, r)) G.placing = null;
+    else if(t){ G.placing = null; G.sel = t; }
+  } else G.sel = t || null;
+  infoKey = '';
+});
+document.addEventListener('keydown', e => {
+  if(!G || G.over) return;
+  if(!$('#modal').classList.contains('hidden')) return;
+  const k = e.key.toLowerCase();
+  const byKey = Object.entries(TOWERS).find(([,d]) => d.key === k);
+  if(byKey) selectBuild(byKey[0]);
+  else if(k === 'escape'){ if(G.placing || G.sel){ G.placing = null; G.sel = null; infoKey = ''; } else pauseMenu(); }
+  else if(k === ' '){ e.preventDefault(); startWave(false); }
+  else if(k === 'f') heroPower();
+  else if(k === 'u' && G.sel){ upgradeTower(G.sel); infoKey = ''; }
+});
+
+/* loop */
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last)/1000); last = now;
+  if(G){
+    if(!G.paused && !G.over){
+      const steps = G.speed;
+      for(let i=0;i<steps && G && !G.over && !G.paused;i++) update(dt);
+    }
+    if(G){ draw(); updateUI(); }
+  }
+  requestAnimationFrame(frame);
+}
+// Pause automatically when the app goes to the background (phone lock, app switch)
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden && G && !G.over && !G.paused && G.wave > 0) pauseMenu();
+});
+// Offline support when installed to the home screen (needs https or localhost)
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  try{ navigator.serviceWorker.register('sw.js').catch(() => {}); }catch(e){}
+}
+show('home');
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
